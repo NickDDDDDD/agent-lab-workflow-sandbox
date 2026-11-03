@@ -1,0 +1,152 @@
+apiVersion: repoctopus/v1alpha1
+kind: RepoctopusWorkspace
+workspace:
+  id: agent-lab-workflow-sandbox
+  repositoryId: agent-lab-workflow-sandbox
+repositories:
+  - id: agent-lab-workflow-sandbox
+    path: .
+  - id: backend
+    path: ../backend
+  - id: web-design
+    path: ../web-design
+  - id: web-front
+    path: ../web-front
+  - id: web-plugin
+    path: ../web-plugin
+profiles:
+  - id: verify
+    nodes:
+      - id: workspace-integrity
+        repository: agent-lab-workflow-sandbox
+        dependsOn: []
+        required: true
+        covers: []
+        type: command
+        executable: git
+        args:
+          - fsck
+          - --no-dangling
+        cwd: .
+        timeoutMs: 120000
+        cache: false
+      - id: backend-verify
+        repository: backend
+        dependsOn: []
+        required: true
+        covers:
+          - "*"
+        type: command
+        executable: mvn
+        args:
+          - verify
+        cwd: .
+        timeoutMs: 600000
+        cache: false
+        zeroTests: warning
+      - id: web-design-typecheck
+        repository: web-design
+        dependsOn: []
+        required: true
+        covers:
+          - "*"
+        type: command
+        executable: npm
+        args:
+          - run
+          - typecheck
+        cwd: .
+        timeoutMs: 600000
+        cache: false
+      - id: web-design-build
+        repository: web-design
+        dependsOn:
+          - web-design-typecheck
+        required: true
+        covers:
+          - "*"
+        type: command
+        executable: npm
+        args:
+          - run
+          - build
+        cwd: .
+        timeoutMs: 600000
+        cache: false
+      - id: web-plugin-typecheck
+        repository: web-plugin
+        dependsOn:
+          - web-design-build
+        required: true
+        covers:
+          - "*"
+        type: command
+        executable: npm
+        args:
+          - run
+          - typecheck
+        cwd: .
+        timeoutMs: 600000
+        cache: false
+      - id: web-plugin-build
+        repository: web-plugin
+        dependsOn:
+          - web-plugin-typecheck
+        required: true
+        covers:
+          - "*"
+        type: command
+        executable: npm
+        args:
+          - run
+          - build
+        cwd: .
+        timeoutMs: 600000
+        cache: false
+      - id: web-front-build
+        repository: web-front
+        dependsOn:
+          - web-plugin-build
+        required: true
+        covers:
+          - "*"
+        type: command
+        executable: npm
+        args:
+          - run
+          - build
+        cwd: .
+        timeoutMs: 600000
+        cache: false
+evidence:
+  retention:
+    maxAgeDays: 14
+    minRecentSuccesses: 2
+delivery:
+  checkpoint:
+    automatic: true
+    protectedBranches:
+      - main
+      - master
+      - release/*
+    commitMessagePattern: "^(feat|fix|docs|refactor|test|chore)(\\([a-z0-9-]+\\))?: .+"
+    quickChecks:
+      "*":
+        - command: git
+          args:
+            - diff
+            - --check
+  publication:
+    remote: origin
+    provider: github
+    githubApiBaseUrl: https://api.github.com
+    mrTitleTemplate: "{{changeId}}"
+    mrBodyTemplate: "{{verificationReport}}"
+    apiCredential:
+      provider: environment
+      variable: REPOCTOPUS_GITHUB_TOKEN
+specificationProvider:
+  id: specification-openspec
+  store:
+    id: agent-lab-round4
+    repositoryId: agent-lab-workflow-sandbox
