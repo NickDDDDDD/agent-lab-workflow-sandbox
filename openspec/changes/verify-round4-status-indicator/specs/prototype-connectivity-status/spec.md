@@ -1,5 +1,9 @@
 # prototype-connectivity-status Delta
 
+## Purpose
+
+为静态协作原型提供跨仓一致、可访问且可自动验证的连接状态表达，使设计系统与消费页面共享同一离线语义，同时不暗示已经接入真实 Agent。
+
 ## ADDED Requirements
 
 ### Requirement: 设计系统提供共享离线状态
