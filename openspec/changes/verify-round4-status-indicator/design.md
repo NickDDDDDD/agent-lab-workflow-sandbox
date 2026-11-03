@@ -20,15 +20,21 @@
 
 ### 1. 扩展现有 StatusBadge，而不是新增连接专用组件
 
-在 `StatusTone` 中加入 `offline`，并在 `StatusBadge` 的穷举映射中提供中性的离线视觉。连接状态仍由可见文字说明，颜色只作为辅助提示。这样保持 API 小而明确，也避免仅为一个静态原型状态引入新的组件层。
+在 `StatusTone` 中加入 `offline`，并在 `StatusBadge` 的穷举映射中提供中性的离线视觉。连接状态仍由可见文字说明，颜色只作为辅助提示。这个 interface 只增加一个合法状态值，却让所有消费方复用组件内的视觉、状态点和排版，保持 module 的深度和样式 locality。
+
+备选方案是新增 `ConnectionStatus`，但它只会把布尔连接状态透传给 `StatusBadge`，形成没有额外行为的浅 module；另一个方案是复用 `idle`，但会混淆“已连接但空闲”和“未连接”两种可观察语义。
 
 ### 2. web-front 只负责选择状态和文案
 
-顶栏直接导入并使用 `StatusBadge`，传入 `offline` 和“未连接 Agent”文案。样式语义归 `web-design`，页面布局和原型说明归 `web-front`，不复制共享组件内部样式。
+顶栏直接导入并使用 `StatusBadge`，传入 `offline` 和“静态原型 · 未连接 Agent”文案。状态视觉归 `web-design`，页面布局和原型说明归 `web-front`，不复制共享 module 的实现样式。
+
+备选方案是在 `web-front` 保留 `.prototype-label` 并只调整文字，但这会继续让同一状态跨越两个样式 seam，后续修正需要修改多个调用方。
 
 ### 3. 用窄范围自动化验证共享契约与消费结果
 
-`web-design` 验证 `offline` 类型和渲染样式映射；`web-front` 验证顶栏渲染共享组件及明确文案。各仓仍执行现有 typecheck/build，确认包导出和跨仓消费未破坏。
+两个仓都复用现有 Vite 工具链，增加 Vitest、Vue Test Utils 和轻量 DOM 环境。`web-design` 通过公开 interface 挂载 `StatusBadge`，验证 `offline` 的文字、状态点和中性 class；`web-front` 挂载 `App`，验证顶栏渲染共享状态 module 和完整原型文案。各仓仍执行 typecheck/build，确认声明产物和跨仓消费未破坏。
+
+备选方案是用文本搜索断言源码，虽然依赖少，但它只验证实现字符串，无法证明 Vue 渲染或公共类型可用；仅依赖 build 也无法形成先失败后通过的行为级 TDD 证据。
 
 ## Risks / Trade-offs
 
