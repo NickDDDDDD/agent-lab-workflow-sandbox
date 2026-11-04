@@ -32,7 +32,7 @@
 
 ### 3. 用窄范围自动化验证共享契约与消费结果
 
-两个仓都复用现有 Vite 工具链，增加 Vitest、Vue Test Utils 和轻量 DOM 环境。`web-design` 通过公开 interface 挂载 `StatusBadge`，验证 `offline` 的文字、状态点和中性 class；`web-front` 挂载 `App`，验证顶栏渲染共享状态 module 和完整原型文案。各仓仍执行 typecheck/build，确认声明产物和跨仓消费未破坏。
+两个仓都复用现有 Vite 工具链，增加 Vitest、Vue Test Utils 和轻量 DOM 环境。每个仓对应一个纵向 Build package，由同一个 package 完整拥有 red、green 和 regression evidence，避免把失败测试与实现拆成无法独立完成 TDD 契约的任务。`web-design` 通过公开 interface 挂载 `StatusBadge`，验证 `offline` 的文字、状态点和中性 class；`web-front` 挂载 `App`，验证顶栏渲染共享状态 module 和完整原型文案。各仓仍执行 typecheck/build，确认声明产物和跨仓消费未破坏。
 
 备选方案是用文本搜索断言源码，虽然依赖少，但它只验证实现字符串，无法证明 Vue 渲染或公共类型可用；仅依赖 build 也无法形成先失败后通过的行为级 TDD 证据。
 
